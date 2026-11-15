@@ -7,6 +7,9 @@
   "engines": {
     "node": ">=20"
   },
+  "bin": {
+    "fieldguide": "bin/fieldguide.js"
+  },
   "scripts": {
     "test": "node --test"
   },
