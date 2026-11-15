@@ -104,6 +104,57 @@ current value is `1`.
   version the validator supports (currently 1), not the value read from the
   guide.
 
+## Other config keys
+
+Besides `format`, `fieldguide.yaml` must set these keys. A missing key or a
+value outside the list is an error:
+
+| Key | Allowed values |
+| --- | -------------- |
+| `audience` | `user` |
+| `guideType` | `handbook` |
+| `verification` | `strict`, `standard` |
+
+Unknown keys are not checked and produce no finding. They are passed through
+unchanged in the `config` object that `validateGuide()` returns, so later
+features and other consumers can read them. A missing, unreadable or unparseable
+`fieldguide.yaml`, or one that is not a mapping, is an error on the file
+`fieldguide.yaml`.
+
+## What it checks in pages
+
+The validator reads every `*.md` file under the guide directory, skipping
+directories that start with `.` and `node_modules`.
+
+**Front matter (errors).** Each page opens with a `---` fenced YAML block. It
+must be closed, must be a mapping, and must contain a non-empty string `title`
+and a non-empty string `summary`. If present, `order` must be a number. A page
+with no front matter block gets file-level (`-`) errors for the missing keys.
+
+**Links (errors unless noted).** Inline links, images and reference-style link
+definitions are checked; links inside code blocks are not.
+
+- Targets with a URL scheme (`https:`, `mailto:`, and so on) and `//` targets
+  are skipped. External links are never fetched.
+- A target starting with `/` is a warning: use a relative path. It is not
+  resolved further.
+- Relative targets resolve from the page's own folder. Percent-encoding is
+  decoded and a `?query` part is dropped.
+- A target that resolves outside the guide directory is an error, as is a
+  target that does not exist (any file type, including images).
+- A `#anchor` is checked against the headings of the target page, or of the
+  same page when the target is only `#anchor`. Anchors are only checked when
+  the target is a `.md` file, and not for images.
+- Anchors are GitHub-style heading slugs: lower-cased, punctuation removed,
+  spaces turned into `-`. Repeated headings get `-1`, `-2` and so on.
+
+**Warnings.** These never change the exit code:
+
+- `title` longer than 70 characters (counted as Unicode code points).
+- `summary` shorter than 50 or longer than 160 characters.
+- The page's leading `h1` (the first heading, if it is level 1) differs from
+  `title`. The comparison is case-sensitive.
+
 ## Known gap
 
 Raw HTML links (for example `<a href="...">`) are not checked, and explicit
