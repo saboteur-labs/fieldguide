@@ -1,1 +1,1 @@
-export {};
+export { validateGuide } from './validate.js';

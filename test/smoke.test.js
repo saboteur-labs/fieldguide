@@ -8,5 +8,5 @@ test('dependencies and source entry point import', async () => {
 
   assert.equal(typeof yaml.parse, 'function');
   assert.equal(typeof markdownIt.default, 'function');
-  assert.deepEqual(Object.keys(index), []);
+  assert.deepEqual(Object.keys(index), ['validateGuide']);
 });
