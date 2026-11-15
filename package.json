@@ -1,0 +1,17 @@
+{
+  "name": "fieldguide",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Guide format validator",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "markdown-it": "^15.0.3",
+    "yaml": "^2.9.1"
+  }
+}
