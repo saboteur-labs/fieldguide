@@ -1,0 +1,12 @@
+format: 1
+audience: user
+guideType: handbook
+verification: standard
+site:
+  name: Example
+  nav:
+    - home
+    - about
+brand:
+  color: "#112233"
+futureKey: 42
