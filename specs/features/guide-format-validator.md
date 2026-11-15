@@ -12,7 +12,7 @@ A Fieldguide guide is a directory of Markdown pages with front matter and one co
 - Every error class in the product spec's FR-12 is detected, and every warning class is reported without failing the guide.
 - Page order and part names are computed by one defined rule that the renderer can consume.
 - The page format carries a version, so consumers can tell which format a guide follows.
-- Getwrite's handbook, given an added guide config, validates with zero errors.
+- Getwrite's handbook, given an added guide config, validates with exactly one error (invalid front matter YAML in `story/metadata.md`, a real defect in Getwrite's page) and two warnings.
 
 ## Non-goals
 - Enforcing `verification` levels or reading verification records (Feature 3).
@@ -45,7 +45,7 @@ A Fieldguide guide is a directory of Markdown pages with front matter and one co
 13. FR-13: `fieldguide.yaml` MUST contain an integer `format` key, whose current value is 1; the validator MUST report an error if it is absent, and an error stating that the validator is out of date if the value is newer than the validator supports. The validator MUST state the format version it checked in the report summary. [US-4]
 14. FR-14: The validator MUST run from a local Fieldguide checkout against a guide path, without network access. (product FR-20) [US-5]
 15. FR-15: The validator MUST exit 0 when no errors are found, 1 when at least one error finding exists (warnings alone MUST NOT cause failure), and 2 when it could not run (bad flag, or guide path missing or not a directory). A missing or unparseable `fieldguide.yaml` is an error finding and exits 1. [US-5]
-16. FR-16: Run against a local Getwrite checkout's `docs/user/handbook` with a guide config added (a `fieldguide.yaml` containing `format: 1`), the validator MUST report zero errors, and MUST report warnings for `protect-and-finish/compiling.md` (summary over 160 characters) and `write/writing-log.md` (h1 differs in case from title). [US-2]
+16. FR-16: Run against a local Getwrite checkout's `docs/user/handbook` with a guide config added (a `fieldguide.yaml` containing `format: 1`), the validator MUST report exactly one error, invalid front matter YAML in `story/metadata.md`, plus warnings for `protect-and-finish/compiling.md` (summary over 160 characters, measured at 165) and `write/writing-log.md` (h1 differs in case from title), and no other findings; the exit code MUST be 1. The error is real: in that page's front matter an unquoted `summary:` value contains ": ", and three independent checks reject it (the `yaml` npm library, "Nested mappings are not allowed in compact mappings"; Python PyYAML safe_load, parse error; saboteur-sites' `scripts/import-handbook.mjs`, "summary is not valid YAML unquoted"). Getwrite's handbook is left unedited (owner decision, 2026-11-15). [US-2]
 17. FR-17: The validator MUST report a warning for a link whose target starts with `/`. [US-2]
 18. FR-18: A folder `index.md` and a root `index.md`, when present, MUST receive the same front matter and link checks as other pages, including required `title` and `summary`. [US-2]
 19. FR-19: The report MUST be plain text, grouped per file, with one line per finding in the form `line: severity: message`, ending with a summary line that includes the format version checked; this layout MUST be documented as stable. [US-2]

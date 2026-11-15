@@ -121,6 +121,11 @@ Deferred to Feature 4 (owner decision, 2026-11-15). Before Feature 4's task brea
 **Impact:** FR-16, FR-17
 **Owner:** Tech lead
 
+**OQ-6: Does Feature 5 fix Getwrite's `story/metadata.md` front matter, or amend FR-21?**
+Measured fact: in a Getwrite checkout, `docs/user/handbook/story/metadata.md` front matter has an unquoted `summary:` value containing ": ". Three independent checks reject it: the `yaml` npm library ("Nested mappings are not allowed in compact mappings"), Python PyYAML safe_load (parse error), and saboteur-sites' `scripts/import-handbook.mjs` ("summary is not valid YAML unquoted"). FR-21 requires the handbook to pass the FR-12 checks with no edits to its pages, which cannot hold for the current page. Decide whether Feature 5 fixes Getwrite's page (one quoting fix) or amends FR-21.
+**Impact:** FR-21, Feature 5
+**Owner:** Product owner
+
 ## Out of Scope (Deferred)
 - [v2] Further user guide types (getting started, FAQ, troubleshooting).
 - [v2] Theming beyond brand values (layouts, components).
