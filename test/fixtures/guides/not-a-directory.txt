@@ -1,0 +1,1 @@
+This is a file, not a guide directory. The CLI must exit 2 when given this path.

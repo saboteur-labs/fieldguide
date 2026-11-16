@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Test artifacts (only the README is tracked)
+.artifacts/*
+!.artifacts/README.md
+
+# Logs and coverage
+*.log
+npm-debug.log*
+coverage/
+
+# Environment and secrets
+.env
+.env.*
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Claude Code: local state only (shared project config under .claude/ stays trackable)
+.claude/worktrees/
+.claude/settings.local.json
+.claude/.cc-writes
+.claude/.pipeline-active
+.claude/.plan-approved

@@ -12,7 +12,7 @@
 **User stories:** US-1, US-3, US-4, US-5, US-6, US-10
 **Depends on:** none
 **Branch suggestion:** feat/guide-format-validator
-**Notes:** FR-2 is validated here as a config field only; enforcing `verification` belongs to Feature 3, and acting on `audience`/`guideType` belongs to Feature 2. The ordering and part-naming rules (FR-8, FR-9) live here because navigation in Feature 4 consumes their output. OQ-4 (title/summary lengths, h1 matching title) may add checks to FR-12 later. The page format must be versioned from this feature onward (spec Constraints).
+**Notes:** FR-2 is validated here as a config field only; enforcing `verification` belongs to Feature 3, and acting on `audience`/`guideType` belongs to Feature 2. The ordering and part-naming rules (FR-8, FR-9) live here because navigation in Feature 4 consumes their output. The OQ-4 length and h1 checks are warnings in FR-12. The page format must be versioned from this feature onward (spec Constraints).
 
 ### Feature 2: User-audience writing method and rules
 **Value:** A writer, human or agent, can follow Fieldguide's instructions from one entry point to plan and write a user handbook, with per-guide grade level and phrase rules, and get phrase warnings from the validator.
@@ -21,7 +21,7 @@
 **User stories:** US-1, US-2, US-4, US-6
 **Depends on:** Feature 1
 **Branch suggestion:** feat/user-writing-method
-**Notes:** FR-5 is blocked on OQ-1 (contents of the default lists); the config mechanism can ship with placeholder defaults, but the feature isn't done until the lists are settled. FR-19 maps every method step; the verify and render entries point at files that Features 3 and 4 deliver, so each of those features updates the entry point as it lands.
+**Notes:** FR-5 is no longer blocked (OQ-1 resolved 2026-11-15): the default lists are a small seed list, versioned content that grows with use, and writing the specific seed entries is Feature 2 work. FR-19 maps every method step; the verify and render entries point at files that Features 3 and 4 deliver, so each of those features updates the entry point as it lands.
 
 ### Feature 3: Verification record and level enforcement
 **Value:** A maintainer can record evidence for each page in a per-page YAML file, and the validator fails any page that lacks a record or doesn't meet the guide's `strict` or `standard` level.
@@ -30,7 +30,7 @@
 **User stories:** US-3
 **Depends on:** Feature 1
 **Branch suggestion:** feat/verification-record
-**Notes:** The validator can confirm that every page has a record and that row labels meet the level. It cannot confirm that every statement on a page has a row; the method docs must say so rather than imply the check covers it.
+**Notes:** This feature reserves the optional `sources` field in the record schema (OQ-3 resolved 2026-11-15); Feature 11 consumes it. The validator can confirm that every page has a record and that row labels meet the level. It cannot confirm that every statement on a page has a row; the method docs must say so rather than imply the check covers it.
 
 ### Feature 4: Branded static site renderer
 **Value:** A maintainer can render a validated guide to an accessible static site with navigation, mobile layout, light and dark themes, and their own brand values.
@@ -39,7 +39,7 @@
 **User stories:** US-3, US-5
 **Depends on:** Feature 1
 **Branch suggestion:** feat/static-renderer
-**Notes:** FR-18 is blocked on OQ-2 (required colour roles), which also determines which pairs FR-17 checks. OQ-5 (build the renderer or adapt an existing generator) should be settled before task breakdown. FR-15 only requires that record files never reach the output, so this feature does not need Feature 3 to ship.
+**Notes:** FR-18 is blocked on OQ-2 (required colour roles), which also determines which pairs FR-17 checks. OQ-2 and OQ-5 are deferred to this feature (owner decision, 2026-11-15): before task breakdown, spike build-vs-adapt (for example Astro Starlight) against Getwrite's handbook, then choose colour roles to fit what the renderer can map. FR-15 only requires that record files never reach the output, so this feature does not need Feature 3 to ship.
 
 ### Feature 5: Getwrite handbook as the proof case
 **Value:** Getwrite's existing user handbook validates, carries its verification record in Fieldguide's format, and renders as a branded site without edits to its pages.
@@ -81,12 +81,12 @@
 
 ### Feature 9: Published content contract
 **Value:** A site maintainer can render validated guides with their own stack, following a versioned contract.
-**Vertical slice:** content (versioned contract document) / data (format version marker) / logic (validator reports the contract version it checks against)
+**Vertical slice:** content (versioned contract document) / data (documents the `format` marker that Feature 1 defines in `fieldguide.yaml`) / logic (validator reports the contract version it checks against)
 **Requirements covered:** FR-25
 **User stories:** US-10
 **Depends on:** Feature 1
 **Branch suggestion:** feat/content-contract
-**Notes:** The contract documents decisions Feature 1 made. Reconciling it with the saboteur-sites importer's extra rules is part of OQ-4.
+**Notes:** The contract documents decisions Feature 1 made. Reconciling it with the saboteur-sites importer's extra rules is part of OQ-4. The importer treats a missing or non-integer `order` as an error (import-handbook.mjs line 184), which conflicts with FR-7 (order optional); the contract must reconcile this. Feature 9 may also promote selected FR-12 warnings to errors.
 
 ### Feature 10: Claude Code skill wrappers
 **Value:** A maintainer using Claude Code can run the method through skills that call the agent-agnostic instructions.
@@ -101,12 +101,12 @@
 
 ### Feature 11: Drift detection
 **Value:** A maintainer can list pages whose verification predates commits that touch the source paths they describe.
-**Vertical slice:** data (page-to-source-path mapping in the guide config) / logic (comparing git history with each record's base commit) / interface (drift report)
+**Vertical slice:** data (page-to-source-path mapping in the `sources` field of each verification record) / logic (comparing git history with each record's base commit) / interface (drift report)
 **Requirements covered:** FR-27
 **User stories:** US-11
 **Depends on:** Feature 3
 **Branch suggestion:** feat/drift-detection
-**Notes:** Blocked on OQ-3 (how pages map to source paths).
+**Notes:** No longer blocked (OQ-3 resolved 2026-11-15): pages map to source paths through the optional `sources` field in each verification record, reserved by Feature 3.
 
 ### Feature 12: Publish from a release tag
 **Value:** A maintainer can render a guide as it existed at a named git tag, so published docs match a release.
@@ -136,5 +136,5 @@
 - Risks:
   - Feature 5 depends on three features, and the record conversion may be unexpectedly costly.
   - Feature 2's entry point (FR-19) is touched by Features 3, 4, 6, 10 and 13; edits must stay small to avoid conflicts between parallel branches.
-  - Blocked items: Feature 2 on OQ-1, Feature 4 on OQ-2 (and OQ-5 before tasks), Feature 11 on OQ-3.
+  - Blocked items: only Feature 4 remains blocked, on OQ-2 and OQ-5 (deferred to Feature 4 by owner decision, 2026-11-15).
   - Feature 1 is the format contract every other feature reads; changes to it after Features 2–4 start will ripple.
