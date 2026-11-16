@@ -21,8 +21,14 @@ function compareLines(a, b) {
   return a - b;
 }
 
-function compareFindings(a, b) {
+/**
+ * The documented finding order: file, then line (file-level first), then
+ * errors before warnings, then message. Used by both validateGuide and the
+ * report, so API callers and the printed report agree.
+ */
+export function compareFindings(a, b) {
   return (
+    compareStrings(a.file, b.file) ||
     compareLines(a.line, b.line) ||
     SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] ||
     compareStrings(a.message, b.message)

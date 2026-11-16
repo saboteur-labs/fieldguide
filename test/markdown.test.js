@@ -71,3 +71,34 @@ test('links inside list items and table cells are found', () => {
 test('empty body yields nothing', () => {
   assert.deepEqual(extract('', 1), { headings: [], links: [] });
 });
+
+// Regression tests for reference definitions, which come from markdown-it's own
+// reference rule rather than a line scan (code review, PR #1).
+test('a "[label]: x" line inside a paragraph is not a reference definition', () => {
+  assert.deepEqual(extract('Para line\n[note]: not a def\n').links, []);
+});
+
+test('a "[label]: x" line inside an HTML block is not a reference definition', () => {
+  assert.deepEqual(extract('<div>\n[h]: h.md\n</div>\n').links, []);
+});
+
+test('definitions inside block quotes and with the URL on the next line are found', () => {
+  assert.deepEqual(extract('> [q]: q.md\n').links, [{ kind: 'reference', target: 'q.md', line: 1 }]);
+  assert.deepEqual(extract('[w]:\n  w.md\n').links, [{ kind: 'reference', target: 'w.md', line: 1 }]);
+});
+
+test('the first of duplicate definitions wins, with its file line', () => {
+  assert.deepEqual(extract('[a]: one.md\n[a]: two.md\n', 5).links, [
+    { kind: 'reference', target: 'one.md', line: 5 },
+  ]);
+});
+
+test('slugs keep combining marks, as GitHub does', () => {
+  assert.equal(extract('# Café\n').headings[0].slug, 'café');
+});
+
+test('headings carry their inline source alongside rendered text', () => {
+  const [h] = extract('# Using `foo`\n').headings;
+  assert.equal(h.text, 'Using foo');
+  assert.equal(h.source, 'Using `foo`');
+});

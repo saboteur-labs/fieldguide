@@ -1,4 +1,4 @@
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { SEVERITY, makeFinding } from './types.js';
 
@@ -25,6 +25,32 @@ function splitTarget(target) {
 
 function isFile(absolutePath) {
   return existsSync(absolutePath) && statSync(absolutePath).isFile();
+}
+
+/**
+ * The guide-relative path as it is spelled on disk, segment by segment, or
+ * null if a segment can't be listed. On case-insensitive filesystems this is
+ * how a link whose case differs from the file is detected; on Linux and GitHub
+ * such a link is broken.
+ */
+function onDiskSpelling(root, relativePosix) {
+  let dir = root;
+  const actual = [];
+  for (const segment of relativePosix.split('/')) {
+    let names;
+    try {
+      names = readdirSync(dir);
+    } catch {
+      return null;
+    }
+    const match = names.includes(segment)
+      ? segment
+      : names.find((name) => name.toLowerCase() === segment.toLowerCase());
+    if (match === undefined) return null;
+    actual.push(match);
+    dir = path.join(dir, match);
+  }
+  return actual.join('/');
 }
 
 function hasSlug(headings, anchor) {
@@ -70,13 +96,31 @@ export function checkLinks({ guideDir, file, links, headingsOf }) {
       report(line, SEVERITY.ERROR, `Link resolves outside the guide: ${target}`);
       continue;
     }
-    if (!existsSync(resolved)) {
+    let relativePosix = relative.split(path.sep).join('/');
+    // Looked up segment by segment, so a case mismatch gets the same warning on
+    // every platform instead of passing on macOS and failing on Linux.
+    const spelled = relativePosix === '' ? '' : onDiskSpelling(root, relativePosix);
+    if (spelled === null) {
       report(line, SEVERITY.ERROR, `Linked file not found: ${target}`);
       continue;
     }
+    if (spelled !== relativePosix) {
+      report(
+        line,
+        SEVERITY.WARNING,
+        `Link target case differs from the file on disk: ${target} (file is ${spelled}); this link breaks on case-sensitive systems`,
+      );
+      relativePosix = spelled;
+    }
 
-    if (kind === 'image' || !anchor || !resolved.endsWith('.md') || !isFile(resolved)) continue;
-    const relativePosix = relative.split(path.sep).join('/');
+    if (
+      kind === 'image' ||
+      !anchor ||
+      !relativePosix.toLowerCase().endsWith('.md') ||
+      !isFile(path.join(root, relativePosix))
+    ) {
+      continue;
+    }
     if (!hasSlug(headingsOf(relativePosix), anchor)) {
       report(line, SEVERITY.ERROR, `Anchor not found in ${relativePosix}: #${anchor}`);
     }

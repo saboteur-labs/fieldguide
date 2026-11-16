@@ -86,7 +86,11 @@ The message wording is not part of the stable layout. The structure above is.
 | ---- | ------- |
 | 0 | The validator ran and found no errors. Warnings alone still exit 0. |
 | 1 | The validator ran and found at least one error finding. A missing or unparseable `fieldguide.yaml` is an error finding, so it exits 1. |
-| 2 | The validator could not run: an unknown flag, a command other than `validate`, a missing or extra guide path, a guide path that does not exist, or a guide path that is not a directory. A usage line goes to stderr and no report is printed. |
+| 2 | The validator could not run: an unknown flag, a command other than `validate`, a missing or extra guide path, a guide path that does not exist, a guide path that is not a directory, or a guide directory that cannot be read. A usage line goes to stderr and no report is printed. |
+
+A subdirectory inside the guide that cannot be read is not a failure to run: it
+is a file-level (`-`) error on that directory, and the rest of the guide is
+still checked.
 
 ## The `format` key
 
@@ -130,9 +134,14 @@ directories that start with `.` and `node_modules`.
 must be closed, must be a mapping, and must contain a non-empty string `title`
 and a non-empty string `summary`. If present, `order` must be a number. A page
 with no front matter block gets file-level (`-`) errors for the missing keys.
+A YAML syntax error is reported on the file line where the parser stopped.
 
 **Links (errors unless noted).** Inline links, images and reference-style link
-definitions are checked; links inside code blocks are not.
+definitions are checked; links inside code blocks are not. Reference
+definitions follow CommonMark: a `[label]: target` line inside a paragraph or an
+HTML block is not a definition, definitions inside block quotes or with the
+target on the next line are, and the first of two definitions with the same
+label wins.
 
 - Targets with a URL scheme (`https:`, `mailto:`, and so on) and `//` targets
   are skipped. External links are never fetched.
@@ -142,18 +151,24 @@ definitions are checked; links inside code blocks are not.
   decoded and a `?query` part is dropped.
 - A target that resolves outside the guide directory is an error, as is a
   target that does not exist (any file type, including images).
+- A target whose letter case differs from the file on disk (`Index.md` for
+  `index.md`) is a warning on every platform. Such a link works on macOS and
+  Windows but breaks on Linux and GitHub.
 - A `#anchor` is checked against the headings of the target page, or of the
   same page when the target is only `#anchor`. Anchors are only checked when
-  the target is a `.md` file, and not for images.
-- Anchors are GitHub-style heading slugs: lower-cased, punctuation removed,
-  spaces turned into `-`. Repeated headings get `-1`, `-2` and so on.
+  the target is a `.md` file (any case), and not for images.
+- Anchors are GitHub-style heading slugs: lower-cased, punctuation removed
+  (letters, accent marks, digits, spaces, `_` and `-` are kept), spaces turned
+  into `-`. Repeated headings get `-1`, `-2` and so on.
 
 **Warnings.** These never change the exit code:
 
 - `title` longer than 70 characters (counted as Unicode code points).
 - `summary` shorter than 50 or longer than 160 characters.
 - The page's leading `h1` (the first heading, if it is level 1) differs from
-  `title`. The comparison is case-sensitive.
+  `title`. The comparison is case-sensitive. A title matches if it equals the
+  heading either as written (``Using `foo` ``) or as plain text (`Using foo`).
+- A link target whose case differs from the file on disk (see Links).
 
 ## Known gap
 

@@ -60,8 +60,13 @@ export function parsePage(text, file) {
         parsed = false;
       }
     } catch (err) {
-      const first = String(err.message).split('\n')[0];
-      add(1, `front matter is not valid YAML: ${first}`);
+      // The YAML block starts on file line 2, so the parser's line + 1 is the
+      // file line. Its own "at line N, column M" counts from the block, so drop it.
+      const yamlLine = err.linePos?.[0]?.line;
+      const first = String(err.message)
+        .split('\n')[0]
+        .replace(/ at line \d+, column \d+:?$/, '');
+      add(yamlLine ? yamlLine + 1 : 1, `front matter is not valid YAML: ${first}`);
       parsed = false;
     }
   }

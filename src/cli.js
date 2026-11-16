@@ -44,7 +44,13 @@ export function run(argv, { stdout = process.stdout, stderr = process.stderr } =
   }
   if (!stats.isDirectory()) return fail(`Guide path is not a directory: ${guidePath}`);
 
-  const { findings, formatVersion } = validateGuide(guidePath);
+  let result;
+  try {
+    result = validateGuide(guidePath);
+  } catch (err) {
+    return fail(`Cannot read guide: ${guidePath} (${err.code ?? err.message})`);
+  }
+  const { findings, formatVersion } = result;
   stdout.write(`${formatReport({ findings, formatVersion })}\n`);
   return findings.some((f) => f.severity === SEVERITY.ERROR) ? EXIT_ERRORS : EXIT_OK;
 }

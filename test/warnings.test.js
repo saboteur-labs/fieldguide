@@ -118,3 +118,15 @@ test('works on real parsed output, with the h1 line in file coordinates', () => 
   assert.equal(findings.length, 1);
   assert.equal(findings[0].line, 6);
 });
+
+test('a title written with the heading\'s inline markup does not warn (code review, PR #1)', () => {
+  const headings = extract('# Using `foo` and *bar*\n').headings;
+  assert.deepEqual(check({ title: 'Using `foo` and *bar*', summary: summary(80) }, headings), []);
+  assert.deepEqual(check({ title: 'Using foo and bar', summary: summary(80) }, headings), []);
+});
+
+test('a differing h1 is reported as written in the source', () => {
+  const headings = extract('# Using `foo`\n').headings;
+  const findings = check({ title: 'Something else', summary: summary(80) }, headings);
+  assert.deepEqual(messages(findings), ['leading h1 "Using `foo`" differs from title "Something else"']);
+});

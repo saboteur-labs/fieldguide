@@ -88,3 +88,21 @@ test('relative links resolve from the page directory', () => {
   assert.equal(check('sub/page.md', ['../target.md#target']).length, 0);
   assert.equal(check('sub/page.md', ['target.md']).length, 1);
 });
+
+// Case mismatches warn on every platform, and the anchor is still checked
+// against the file as spelled on disk (code review, PR #1).
+test('a link whose case differs from the file warns and names the real file', () => {
+  const findings = check('index.md', ['Target.md']);
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].severity, 'warning');
+  assert.match(findings[0].message, /^Link target case differs from the file on disk: Target\.md \(file is target\.md\)/);
+});
+
+test('an uppercase .MD target still has its anchor checked', () => {
+  const findings = check('index.md', ['TARGET.MD#nope', 'TARGET.MD#second-section']);
+  assert.deepEqual(
+    findings.map((f) => [f.line, f.severity]),
+    [[1, 'warning'], [1, 'error'], [2, 'warning']],
+  );
+  assert.match(findings[1].message, /^Anchor not found in target\.md: #nope/);
+});

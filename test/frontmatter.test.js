@@ -114,3 +114,12 @@ test('index pages use the same function and checks (FR-18)', () => {
   assert.equal(r.findings[0].file, 'sub/index.md');
   assert.ok(has(r.findings, 'title'));
 });
+
+test('a YAML error is reported at its file line, without the parser\'s block-relative position (code review, PR #1)', () => {
+  const text = '---\ntitle: T\nsummary: S\nfoo: [unclosed\n---\nBody\n';
+  const r = parsePage(text, 'bad.md');
+  const yamlErrors = r.findings.filter((f) => f.message.startsWith('front matter is not valid YAML'));
+  assert.equal(yamlErrors.length, 1);
+  assert.ok(yamlErrors[0].line >= 4, `expected file line 4 or later, got ${yamlErrors[0].line}`);
+  assert.doesNotMatch(yamlErrors[0].message, /at line \d+, column \d+/);
+});

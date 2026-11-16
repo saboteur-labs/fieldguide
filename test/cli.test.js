@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -81,4 +81,27 @@ test('exit 2 for a path that is a file', () => {
   assert.match(r.stderr, /not a directory/i);
   assert.match(r.stderr, /Usage:/);
   assert.equal(r.stdout, '');
+});
+
+test('exit 2 when the guide directory itself cannot be read (code review, PR #1)', (t) => {
+  const guide = mkdtempSync(join(tmpdir(), 'fg-cli-unreadable-'));
+  chmodSync(guide, 0o000);
+  try {
+    try {
+      readdirSync(guide);
+      return t.skip('chmod 000 does not block reads here (running as root?)');
+    } catch {
+      // expected: the directory is unreadable
+    }
+    const r = run('validate', guide);
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /^Cannot read guide: /m);
+    assert.equal(r.stdout, '');
+  } finally {
+    chmodSync(guide, 0o755);
+  }
+});
+
+test('bin/fieldguide.js is executable', () => {
+  assert.ok(statSync(bin).mode & 0o111, 'bin/fieldguide.js has no executable bit');
 });

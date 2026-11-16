@@ -35,9 +35,12 @@ export function checkWarnings({ file, data, headings }) {
     if (length > TITLE_MAX) {
       warn(1, `title is ${length} characters; keep it to ${TITLE_MAX} or fewer`);
     }
+    // A title may be written with the heading's inline markup (`code`, *emphasis*)
+    // or as plain text; either matches.
     const h1 = leadingH1(headings);
-    if (h1 && h1.text !== title.trim()) {
-      warn(h1.line, `leading h1 "${h1.text}" differs from title "${title.trim()}"`);
+    const wanted = title.trim();
+    if (h1 && h1.text !== wanted && (h1.source ?? h1.text) !== wanted) {
+      warn(h1.line, `leading h1 "${h1.source ?? h1.text}" differs from title "${wanted}"`);
     }
   }
 

@@ -6,31 +6,42 @@ import { extract } from './markdown.js';
 import { checkLinks } from './links.js';
 import { checkWarnings } from './warnings.js';
 import { buildNavigation } from './order.js';
+import { compareFindings } from './report.js';
 import { FORMAT_VERSION, SEVERITY, makeFinding } from './types.js';
 
-/** All `*.md` files under `root` as guide-relative `/` paths, skipping dot-directories and node_modules. */
-function discover(root, rel = '') {
+/**
+ * All `*.md` files under `root` as guide-relative `/` paths, skipping
+ * dot-directories and node_modules. A subdirectory that can't be read becomes
+ * an error finding; an unreadable guide root throws (the caller can't validate
+ * anything, so the CLI reports it as "could not run").
+ */
+function discover(root, findings, rel = '') {
   const found = [];
-  const entries = readdirSync(path.join(root, rel), { withFileTypes: true });
+  let entries;
+  try {
+    entries = readdirSync(path.join(root, rel), { withFileTypes: true });
+  } catch (err) {
+    if (rel === '') throw err;
+    findings.push(
+      makeFinding({
+        file: rel,
+        line: null,
+        severity: SEVERITY.ERROR,
+        message: `cannot read directory (${err.code ?? err.message})`,
+      }),
+    );
+    return found;
+  }
   for (const entry of entries) {
     const entryRel = rel === '' ? entry.name : `${rel}/${entry.name}`;
     if (entry.isDirectory()) {
       if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
-      found.push(...discover(root, entryRel));
+      found.push(...discover(root, findings, entryRel));
     } else if (entry.isFile() && entry.name.endsWith('.md')) {
       found.push(entryRel);
     }
   }
   return found;
-}
-
-function compareFindings(a, b) {
-  if (a.file !== b.file) return a.file < b.file ? -1 : 1;
-  const la = a.line ?? 0;
-  const lb = b.line ?? 0;
-  if (la !== lb) return la - lb;
-  if (a.message === b.message) return 0;
-  return a.message < b.message ? -1 : 1;
 }
 
 function readPage(guideDir, file) {
@@ -39,15 +50,15 @@ function readPage(guideDir, file) {
 
 /**
  * Validate a whole guide directory. Returns
- * `{ findings, navigation, config, formatVersion }`; `findings` is sorted by
- * file then line, `config` is null when the config could not be loaded, and
+ * `{ findings, navigation, config, formatVersion }`; `findings` is in the
+ * documented report order (see `compareFindings`), `config` is null when the config could not be loaded, and
  * `formatVersion` is the format version this validator checked.
  */
 export function validateGuide(guideDir) {
   const { config, findings: configFindings } = loadConfig(guideDir);
   const findings = [...configFindings];
 
-  const pages = discover(guideDir)
+  const pages = discover(guideDir, findings)
     .sort()
     .map((file) => {
       let parsed;

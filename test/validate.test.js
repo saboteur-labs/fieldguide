@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { chmodSync, mkdtempSync, writeFileSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -113,5 +113,42 @@ test('no network module is imported anywhere under src/', () => {
   const srcDir = fileURLToPath(new URL('../src', import.meta.url));
   for (const file of walk(srcDir).filter((p) => p.endsWith('.js'))) {
     assert.doesNotMatch(readFileSync(file, 'utf8'), banned, file);
+  }
+});
+
+test('findings follow the documented report order: file, line, errors before warnings', async () => {
+  const { compareFindings } = await import('../src/report.js');
+  const { findings } = validateGuide(fixture('guides', 'broken'));
+  assert.deepEqual(findings, [...findings].sort(compareFindings));
+});
+
+// chmod 000 has no effect when running as root, so these checks skip there.
+function unreadableDir(dir) {
+  mkdirSync(dir, { recursive: true });
+  chmodSync(dir, 0o000);
+  try {
+    readdirSync(dir);
+    chmodSync(dir, 0o755);
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+test('an unreadable subdirectory is an error finding, not a crash (code review, PR #1)', (t) => {
+  const guide = mkdtempSync(join(tmpdir(), 'fg-unreadable-'));
+  writeFileSync(join(guide, 'fieldguide.yaml'), 'format: 1\naudience: user\nguideType: handbook\nverification: standard\n');
+  writeFileSync(join(guide, 'index.md'), '---\ntitle: Home\nsummary: A landing page that is long enough to pass the summary length check.\n---\n');
+  const locked = join(guide, 'locked');
+  if (!unreadableDir(locked)) return t.skip('chmod 000 does not block reads here (running as root?)');
+  try {
+    const { findings } = validateGuide(guide);
+    assert.deepEqual(
+      findings.map((f) => [f.file, f.line, f.severity]),
+      [['locked', null, 'error']],
+    );
+    assert.match(findings[0].message, /^cannot read directory/);
+  } finally {
+    chmodSync(locked, 0o755);
   }
 });
