@@ -55,3 +55,7 @@ summary: How to install the app and create your first project in a few steps.
 
 - [Guide format validator](docs/validator.md): report layout, exit codes,
   config keys, and the link and warning rules.
+
+## Example
+
+[`examples/hyperencabulator/`](examples/hyperencabulator/) is a user handbook for a fictional, deliberately jargon-heavy machine. It is test content for Fieldguide and a check on plain-language writing. Test output lands in `.artifacts/`, which is gitignored.

@@ -1,0 +1,5 @@
+# Example guide: a user handbook for a fictional machine.
+format: 1
+audience: user
+guideType: handbook
+verification: standard

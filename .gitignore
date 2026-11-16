@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# Test artifacts (only the README is tracked)
+.artifacts/*
+!.artifacts/README.md
+
 # Logs and coverage
 *.log
 npm-debug.log*
